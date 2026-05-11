@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia Animada - Final Especial</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+        }
+
+        /* Capas de Fondo */
+        #fondo-img, #video-fondo {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: opacity 1.5s ease;
+        }
+
+        #fondo-img { 
+            z-index: 5; 
+            background: url('img/game1.png') no-repeat center center fixed; 
+            background-size: cover; 
+        }
+        #video-fondo { z-index: 1; opacity: 0; }
+
+        /* ESCENA FINAL */
+        #escena-final {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            display: none;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            overflow: hidden;
+        }
+
+        /* Contenedor para las frases finales */
+        #contenedor-frases {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            text-align: center;
+            z-index: 300;
+        }
+
+        .frase-final {
+            font-size: 2.8rem;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out;
+            position: absolute;
+            width: 100%;
+            left: 0;
+        }
+
+        .mostrar { opacity: 1 !important; }
+
+        /* Corazones */
+        #corazones-fondo {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .corazon {
+            position: absolute;
+            color: #ff4d4d;
+            font-size: 20px;
+            user-select: none;
+            opacity: 0.6;
+            animation: flotarArriba linear infinite;
+        }
+
+        @keyframes flotarArriba {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+        }
+
+        /* GIFS */
+        #stray-gif {
+            position: absolute;
+            height: 300px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        #boka-gif {
+            position: absolute;
+            height: 180px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(80px);
+            z-index: 2;
+        }
+
+        /* UI */
+        .cuadro-madera {
+            position: absolute;
+            top: 10px; left: 50%;
+            transform: translateX(-50%);
+            width: 85%; max-width: 650px;
+            background: rgba(93, 64, 55, 0.5); border: 3px solid rgba(62, 39, 35, 0.5);;
+            padding: 5px; color: #efd8c1;
+            z-index: 100; border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        #btn-siguiente {
+            position: absolute;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            background: #8d6e63; color: white;
+            border: 3px solid #3e2723;
+            cursor: pointer; font-weight: bold;
+            z-index: 110; border-radius: 5px;
+        }
+
+        .sprite { position: absolute; image-rendering: pixelated; transition: all 0.5s ease; z-index: 10; }
+
+    </style>
+</head>
+<body>
+
+    <audio id="musica-fondo" loop>
+        <source src="música/músicacap1.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="escenario">
+        <div id="fondo-img"></div>
+        <video id="video-fondo" loop muted playsinline></video>
+
+        <div id="escena-final">
+            <div id="corazones-fondo"></div>
+            
+            <div id="contenedor-frases">
+                <p id="frase-dinamica" class="frase-final"></p>
+            </div>
+
+            <img src="gif/stray.gif" id="stray-gif" alt="Stray">
+            <img src="gif/boka.gif" id="boka-gif" alt="Boka">
+        </div>
+
+        <div class="cuadro-madera" id="ui-texto">
+            <p id="texto-narrativo">
+                ¡Ay, y cómo olvidar las tardes de Gacha, en las que intentábamos conseguir los ídolos más exclusivos para presumirlos con los demás jugadores! Tengo que confesar que odié mi suerte en este tipo de juegos: nunca me tocaban las cartas que quería 😣. Pero como siempre, tú estabas ahí echándome la mano. Gracias a eso pude conseguir a mis chicos guapos – aún sigo presumiendo a mi Félix en ese juego 😅
+            </p>
+        </div>
+
+        <button id="btn-siguiente" onclick="avanzar()">→</button>
+
+        <img src="gif/pollito8.gif" id="pollito" class="sprite" alt="Pollito" style="right: 210px; bottom: 100px; height: 110px;">
+        <img src="gif/Sam8.gif" id="sam" class="sprite" alt="Sam" style="right: 5px; bottom: 100px; height: 180px;">
+    </div>
+
+    <script>
+        let escenaActual = 1;
+        const musica = document.getElementById('musica-fondo');
+        const video = document.getElementById('video-fondo');
+
+        function cambiarMusica(nuevaRuta) {
+            let vol = 1.0;
+            const bajada = setInterval(() => {
+                if (vol > 0.1) {
+                    vol -= 0.1;
+                    musica.volume = vol;
+                } else {
+                    clearInterval(bajada);
+                    musica.src = nuevaRuta;
+                    musica.load();
+                    musica.play();
+                    const subida = setInterval(() => {
+                        if (vol < 1.0) { vol += 0.1; musica.volume = vol; } else { clearInterval(subida); }
+                    }, 150);
+                }
+            }, 100);
+        }
+
+        function cargarVideoSuave(ruta) {
+            video.style.opacity = "0"; 
+            video.src = ruta;
+            video.load();
+            video.oncanplaythrough = () => { video.play(); video.style.opacity = "1"; };
+        }
+
+        function generarCorazones() {
+            const contenedor = document.getElementById('corazones-fondo');
+            const totalCorazones = 30;
+
+            for (let i = 0; i < totalCorazones; i++) {
+                const corazon = document.createElement('div');
+                corazon.className = 'corazon';
+                corazon.innerText = '❤️';
+                
+                corazon.style.left = Math.random() * 100 + 'vw';
+                corazon.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                corazon.style.animationDelay = (Math.random() * 5) + 's';
+                corazon.style.fontSize = (Math.random() * 20 + 10) + 'px';
+
+                contenedor.appendChild(corazon);
+            }
+        }
+
+        function mostrarSecuenciaTexto() {
+            const elemento = document.getElementById('frase-dinamica');
+            const frases = [
+                "AHÍ DONDE VAYAS", 
+                "EN CUALQUIER PARTE", 
+                "NUNCA DEJES DE SONREÍR❤️"
+            ];
+
+            let tiempoTotal = 0;
+
+            frases.forEach((texto, index) => {
+                // Aparecer
+                setTimeout(() => {
+                    elemento.innerHTML = texto;
+                    elemento.classList.add('mostrar');
+                }, tiempoTotal);
+
+                // Desvanecer (solo si no es la última)
+                if (index < frases.length - 1) {
+                    setTimeout(() => {
+                        elemento.classList.remove('mostrar');
+                    }, tiempoTotal + 2500);
+                    
+                    tiempoTotal += 3800; // Tiempo hasta que aparezca la siguiente
+                }
+            });
+        }
+
+        function avanzar() {
+            if (escenaActual === 1) musica.play();
+
+            escenaActual++;
+            const texto = document.getElementById('texto-narrativo');
+            const sam = document.getElementById('sam');
+            const pollito = document.getElementById('pollito');
+            const fondoImg = document.getElementById('fondo-img');
+            const btn = document.getElementById('btn-siguiente');
+            const ui = document.getElementById('ui-texto');
+
+            if (escenaActual === 2) {
+                fondoImg.style.opacity = '0';
+                cargarVideoSuave("video/videocap1.mp4");
+                sam.style.display = "none"; pollito.style.display = "none";
+                texto.innerHTML = "Ahora que lo recuerdo, lo mejor eran esas charlas en las que podíamos hablar de cualquier cosa. Solo nos poníamos cómodos y dejábamos que fluyera; a veces me dejaba llevar de más, perdón por eso 😓. Ahora que estoy aquí escribiéndolo, quizá estuvo un poco mal. A veces pienso que ese fue el detonante que causó el distanciamiento. Lo pensé mucho esa noche que me bloqueaste: no dejaba de culparme, fue una noche muy dura para mí. Tuve muchos pensamientos – fue algo inesperado, y ocurrió cuando volvía de una cita con los médicos.Ya sé que luego dijiste que fue una amiga la que me bloqueó, pero después de eso no fue lo mismo: sentía que ya no deseabas tenerme cerca, no supe como reaaccionar en ese momento, por eso y las palabras que no puede decirlas en ese momento, te escribo lo siguiente";
+            } 
+            else if (escenaActual === 3) {
+                cargarVideoSuave("video/videocap2.mp4");
+                sam.src = "gif/Samcap2.gif";
+                pollito.style.display = "block";
+pollito.style.height = "180px";
+pollito.style.right = "120px"; sam.style.display = "block";
+                pollito.src = "gif/pollitocap2.gif"; pollito.style.display = "block";
+                texto.innerHTML = "Ahora, en mi mente estás aquí otra vez. Imagino que sigues cerca y puedo decir esto: cuando mencionaste la edad y la distancia que nos separa, dijiste que algo así no podía funcionar. No podía aceptarlo, por eso me comprometí a quererte sin importar la distancia, negándome a aceptar tu negativa. Ahora que lo pienso, quizás en el fondo siempre supiste que esto no era lo que realmente querías, pero no quisiste decirlo. No sé qué pensaste en ese momento; solo tú lo sabes. Amé cada momento que pasamos juntos. Cada una era como tenerte cerca de mí, y entonces la distancia era solo una ilusión. Se sentía tan real. Fueron los mejores momentos y los disfruté como un niño pequeño. Poco a poco, esa ilusión se fue desvaneciendo. Las charlas se hacían más cortas y las llamadas menos frecuentes. Solía pensar si tenía que ver con mi mal comportamiento en tantas charlas nocturnas o con mi falta de claridad ante las situaciones. Es algo que aún me persigue hoy en día; son cosas que cada día intento mejorar. Cuando me comentaste que tu corazón tenía a alguien más y que querías corresponderle, entendí que ya era demasiado tarde. Fue doloroso perderte poco a poco, mirando a la distancia cómo te desvanecías ante mis ojos, pensando en lo que tuve y perdí. Ya es tarde para lamentarse y solo me queda mejorar y desearte lo mejor.";
+            }
+            else if (escenaActual === 4) {
+                cambiarMusica("música/músicacap2.mp3");
+                cargarVideoSuave("video/videocap3.mp4");
+                sam.style.display = "none";
+                pollito.src = "gif/pollitocap3.gif";
+                pollito.style.height = "300px";
+                pollito.style.right = "120px";
+                texto.innerHTML = ".Boakari, pollito, Esmeralda, Sugey Ahora todos esos nombres tienen un significado muy especial en mí. Sé que cuando piense en algo lindo o divertido, estarás tú como referencia, y lo afirmo por todo el tiempo que te conozco. Desde que te vi por primera vez mientras construía mi casita, hasta el punto en el que estamos ahora, vivimos muchas aventuras y muchas historias – buenas y malas – pero todas ellas fueron entretenidas. Las viví como un niño pequeño: con juegos, bromas y locuras. Pero ya es momento de dar fin a mi travesía por estos mares; dejaré de contar mis historias. Creo que este es un gran momento para comenzar una nueva etapa en la vida";
+            }
+            else if (escenaActual === 5) {
+                cargarVideoSuave("video/videocap4.mp4");
+                texto.innerHTML = ".Pero tu historia aún no termina: tú tienes muchas más historias que contar y la sigues escribiendo, y yo creo que lo harás bien. Eres una chica valiente, yo lo sé.<br>Gracias por todo, pollito. Ahora sonríe, vive, disfruta, canta, baila y escribe tu historia tal como te gustaría escucharla en el futuro. Aunque tengas recaídas, miedo y creas que no puedes más, recuerda que una buena historia, por más simple que sea, tiene momentos complicados. Pero como la protagonista que eres, siempre lograrás salir de ese caos como el sol al atardecer. Puede que la noche sea muy oscura y fría, pero siempre estarás ahí para ver un nuevo amanecer y, con él, una nueva aventura.";
+            }
+            else if (escenaActual === 6) {
+                video.style.opacity = "0";
+                ui.style.display = "none";
+                btn.style.display = "none";
+                pollito.style.display = "none";
+                
+                const final = document.getElementById('escena-final');
+                final.style.display = "block"; 
+                
+                setTimeout(() => { 
+                    final.style.opacity = "1"; 
+                    generarCorazones();
+                    mostrarSecuenciaTexto();
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>
